@@ -1,0 +1,181 @@
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 900px;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .wheel {
+            width: 100%;
+            height: auto;
+            transition: transform 5s cubic-bezier(0.17, 0.67, 0.14, 1);
+            transform: rotate(0deg);
+        }
+
+        .selector {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            background-color: #ff4444;
+            clip-path: polygon(50% 0%, 100% 100%, 0 100%);
+            z-index: 10;
+        }
+
+        .spin-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #ffffff;
+            border: 3px solid #ff4444;
+            color: #ff4444;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 5;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .spin-btn:hover {
+            background-color: #ff4444;
+            color: white;
+        }
+
+        .card {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: none;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background-color: #4e73df;
+            color: white;
+            font-weight: 600;
+            padding: 15px;
+        }
+
+        .result-section {
+            min-height: 100px;
+            display: none;
+        }
+
+        .prize-card {
+            background: linear-gradient(45deg, #FF8C00, #FFA500);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            color: white;
+            text-align: center;
+            transform: scale(0);
+            transition: transform 0.5s ease-in-out;
+            margin-top: 20px;
+        }
+
+        .prize-card.show {
+            transform: scale(1);
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            position: absolute;
+            top: 0;
+            opacity: 0;
+            animation: confetti-fall 5s ease-in-out forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                opacity: 1;
+                top: -10px;
+                transform: translateX(0) rotateZ(0);
+            }
+
+            100% {
+                opacity: 0;
+                top: 100vh;
+                transform: translateX(calc(random() * 200px - 100px)) rotateZ(720deg);
+            }
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20%,
+            60% {
+                transform: translateX(-5px);
+            }
+
+            40%,
+            80% {
+                transform: translateX(5px);
+            }
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, .3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .main-title {
+            color: #4e73df;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Ẩn iframe */
+        #hidden-iframe {
+            display: none;
+            width: 0;
+            height: 0;
+            border: 0;
+            position: absolute;
+        }
