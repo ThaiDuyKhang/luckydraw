@@ -2,25 +2,18 @@ $(document).ready(function() {
   // URL của Google Apps Script
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxIqE_F_iM3Av8ixl7Fc_8iksGtP9A-cV-DDWMpXNQO1rQJpOD_2r84ZLPU6FpvdEC9/exec";
 
-const prizeZones = [
-    // Thứ tự này có thể cần điều chỉnh theo thiết kế thực tế của bạn
-    { percentage: 20, startAngle: 0, endAngle: 30, position: "12-1h", color: "vang" },
-    { percentage: 50, startAngle: 30, endAngle: 60, position: "1-2h", color: "xanh" },
-    { percentage: 40, startAngle: 60, endAngle: 90, position: "2-3h", color: "vang" },
-    { percentage: 20, startAngle: 90, endAngle: 120, position: "3-4h", color: "xanh" },
-    { percentage: 30, startAngle: 120, endAngle: 150, position: "4-5h", color: "vang" },
-    { percentage: 20, startAngle: 150, endAngle: 180, position: "5-6h", color: "xanh" },
-    { percentage: 20, startAngle: 180, endAngle: 210, position: "6-7h", color: "vang" },
-    { percentage: 30, startAngle: 210, endAngle: 240, position: "7-8h", color: "xanh" },
-    { percentage: 40, startAngle: 240, endAngle: 270, position: "8-9h", color: "vang" },
-    { percentage: 30, startAngle: 270, endAngle: 300, position: "9-10h", color: "xanh" },
-    { percentage: 50, startAngle: 300, endAngle: 330, position: "10-11h", color: "vang" },
-    { percentage: 40, startAngle: 330, endAngle: 360, position: "11-12h", color: "xanh" }
+  // Wheel configuration
+  const prizes = [
+    { percentage: 20, count: 8, color: "#4CAF50" }, // Green
+    { percentage: 30, count: 6, color: "#2196F3" }, // Blue
+    { percentage: 40, count: 4, color: "#FFC107" }, // Yellow
+    { percentage: 50, count: 2, color: "#FF5722" }, // Orange
   ];
 
+  let segments = [];
+  let totalSegments = 0;
   let selectedPrize = null;
   let isSpinning = false;
-  let currentRotation = 0;
 
   // Tạo modal bootstrap
   const congratsModal = new bootstrap.Modal($("#congratsModal")[0], {
@@ -28,208 +21,80 @@ const prizeZones = [
     keyboard: false
   });
 
-  // Khởi tạo vòng quay với thiết kế EZ TECH
-  initEZTechWheel();
+  // Calculate total segments
+  prizes.forEach((prize) => {
+    totalSegments += prize.count;
+  });
 
-  function initEZTechWheel() {
-    // Gán sự kiện click cho nút quay mới
-    $('#ez-spin-btn').click(handleSpin);
-  }
- // DEBUG: Hàm test góc
-  window.testAngle = function(testAngle) {
-    const result = calculatePrizeFromAngle(testAngle);
-    updateDebugInfo({
-      expected: `Test ${testAngle}°`,
-      finalAngle: testAngle,
-      result: result
-    });
-  };
-
-  // Hàm tính toán giải thưởng từ góc (CẦN ĐIỀU CHỈNH)
-  function calculatePrizeFromAngle(finalAngle) {
-    const normalizedAngle = ((finalAngle % 360) + 360) % 360;
-    
-    // THỬ CÁC CÁCH TÍNH KHÁC NHAU:
-    
-    // Cách 1: Kim chỉ cố định ở 0°, vòng quay ngược chiều kim đồng hồ
-    let pointerAngle1 = normalizedAngle;
-    
-    // Cách 2: Kim chỉ cố định ở 0°, vòng quay theo chiều kim đồng hồ  
-    let pointerAngle2 = (360 - normalizedAngle) % 360;
-    
-    // Cách 3: Điều chỉnh thêm offset
-    let pointerAngle3 = (normalizedAngle + 90) % 360;
-    let pointerAngle4 = (360 - normalizedAngle + 90) % 360;
-
-    console.log('=== ANGLE DEBUG ===');
-    console.log('Final Angle:', finalAngle);
-    console.log('Normalized:', normalizedAngle);
-    console.log('Method 1 (direct):', pointerAngle1);
-    console.log('Method 2 (reverse):', pointerAngle2);
-    console.log('Method 3 (+90):', pointerAngle3);
-    console.log('Method 4 (reverse+90):', pointerAngle4);
-
-    // Thử từng cách và tìm vùng phù hợp
-    const methods = [
-      { name: 'Direct', angle: pointerAngle1 },
-      { name: 'Reverse', angle: pointerAngle2 },
-      { name: 'Direct+90', angle: pointerAngle3 },
-      { name: 'Reverse+90', angle: pointerAngle4 }
-    ];
-
-    let foundZone = null;
-    let usedMethod = '';
-
-    // Thử method 2 trước (thường đúng nhất)
-    for (let zone of prizeZones) {
-      if (pointerAngle2 >= zone.startAngle && pointerAngle2 < zone.endAngle) {
-        foundZone = zone;
-        usedMethod = 'Reverse';
-        break;
-      }
+  // Create segments array
+  prizes.forEach((prize) => {
+    for (let i = 0; i < prize.count; i++) {
+      segments.push({
+        percentage: prize.percentage,
+        color: prize.color,
+      });
     }
+  });
 
-    // Nếu không tìm thấy, thử các method khác
-    if (!foundZone) {
-      for (let method of methods) {
-        for (let zone of prizeZones) {
-          if (method.angle >= zone.startAngle && method.angle < zone.endAngle) {
-            foundZone = zone;
-            usedMethod = method.name;
-            break;
-          }
-        }
-        if (foundZone) break;
-      }
-    }
+  // Shuffle the segments for randomness
+  segments = shuffleArray(segments);
 
-    // Fallback
-    if (!foundZone) {
-      foundZone = prizeZones[0];
-      usedMethod = 'Fallback';
-    }
+  // Draw the wheel
+  drawWheel(segments);
 
-    console.log(`Found zone: ${foundZone.percentage}% (${foundZone.position}) using ${usedMethod}`);
-
-    return {
-      ...foundZone,
-      debugInfo: {
-        finalAngle,
-        normalizedAngle,
-        pointerAngle: usedMethod === 'Reverse' ? pointerAngle2 : pointerAngle1,
-        method: usedMethod
-      }
-    };
-  }
-
-  // Cập nhật thông tin debug
-  function updateDebugInfo(data) {
-    $('#debug-expected').text(`Expected: ${data.expected}`);
-    $('#debug-angle').text(`Final Angle: ${data.finalAngle?.toFixed(2)}°`);
-    $('#debug-normalized').text(`Normalized: ${data.result?.debugInfo?.normalizedAngle?.toFixed(2)}°`);
-    $('#debug-pointer').text(`Pointer Angle: ${data.result?.debugInfo?.pointerAngle?.toFixed(2)}°`);
-    $('#debug-result').text(`Result: ${data.result?.percentage}% (${data.result?.position})`);
-    
-    const isMatch = data.expected.includes(data.result?.percentage + '%');
-    $('#debug-match').text(`Match: ${isMatch ? '✅ CORRECT' : '❌ WRONG'}`);
-    $('#debug-match').css('color', isMatch ? 'green' : 'red');
-  }
-
-  function generateSpinAngle(targetPrize) {
-    const matchingZones = prizeZones.filter(zone => zone.percentage === targetPrize.percentage);
-    const selectedZone = matchingZones[Math.floor(Math.random() * matchingZones.length)];
-    
-    const randomAngleInZone = selectedZone.startAngle + 
-      Math.random() * (selectedZone.endAngle - selectedZone.startAngle);
-    
-    const spins = 8 + Math.random() * 4;
-    // THỬ CÁCH TÍNH KHÁC: thay vì (360 - randomAngleInZone) 
-    const finalAngle = spins * 360 + randomAngleInZone; // Thử không đảo ngược
-
-    console.log(`Target: ${targetPrize.percentage}%, Zone: ${selectedZone.position}, Random: ${randomAngleInZone.toFixed(2)}°, Final: ${finalAngle.toFixed(2)}°`);
-    
-    return finalAngle;
-  }
-
-  function handleSpin() {
+  // Spin button click handler
+  $("#spin-btn").click(function() {
     if (isSpinning) return;
 
+    // Start spinning
     isSpinning = true;
-    $('#ez-spin-btn').css('pointer-events', 'none');
+    $(this).prop('disabled', true);
 
-    const randomPrize = getRandomPrize();
-    selectedPrize = randomPrize;
+    // Determine winning segment
+    const segmentIndex = Math.floor(Math.random() * segments.length);
+    selectedPrize = segments[segmentIndex];
 
-    const spinAngle = generateSpinAngle(randomPrize);
-    currentRotation += spinAngle;
+    // Calculate rotation angle
+    const segmentAngle = 360 / segments.length;
+    const segmentMiddle = segmentIndex * segmentAngle + segmentAngle / 2;
+    const spinAngle = 3600 + (360 - segmentMiddle);
 
-    $('.custom-wheel').css({
-      'transform': `rotate(${currentRotation}deg)`,
+    // Rotate the wheel with CSS animation
+    $('.wheel').css({
+      'transform': `rotate(${spinAngle}deg)`,
       'transition': 'transform 5s cubic-bezier(0.1, 0.1, 0.17, 1)'
     });
-
-    // Update debug info
-    updateDebugInfo({
-      expected: `${selectedPrize.percentage}%`,
-      finalAngle: currentRotation,
-      result: { percentage: '...', position: 'Spinning...' }
-    });
-
+ 
+    // After spinning is complete
     setTimeout(() => {
       isSpinning = false;
-      $('#ez-spin-btn').css('pointer-events', 'auto');
+      $(this).prop('disabled', false);
 
-      const finalResult = calculatePrizeFromAngle(currentRotation);
+      // Hiển thị kết quả trong modal
+      $("#prize-text").text(`Giảm giá ${selectedPrize.percentage}%`);
+      $("#discount-percentage").val(selectedPrize.percentage);
       
-      // Update debug với kết quả cuối
-      updateDebugInfo({
-        expected: `${selectedPrize.percentage}%`,
-        finalAngle: currentRotation,
-        result: finalResult
-      });
+      // Thêm class zoom in cho modal
+      $("#congratsModal").addClass('modal-zoom-in');
+      
+      // Hiển thị modal chúc mừng với hiệu ứng zoom in
+      congratsModal.show();
 
-      showResult();
-    }, 5000);
-  }
+      // Create confetti effect
+      createConfetti();
 
-  function getRandomPrize() {
-    const prizes = [
-      { percentage: 20, weight: 40 },
-      { percentage: 30, weight: 30 },
-      { percentage: 40, weight: 20 },
-      { percentage: 50, weight: 10 }
-    ];
+      // Remove zoom in class sau khi animation hoàn thành
+      setTimeout(() => {
+        $("#congratsModal").removeClass('modal-zoom-in');
+      }, 600);
+    }, 5000); // Spin duration
+  });
 
-    const totalWeight = prizes.reduce((sum, prize) => sum + prize.weight, 0);
-    let random = Math.random() * totalWeight;
-
-    for (let prize of prizes) {
-      random -= prize.weight;
-      if (random <= 0) {
-        return { percentage: prize.percentage };
-      }
-    }
-
-    return { percentage: 20 };
-  }
-
-  function showResult() {
-    $("#prize-text").text(`Giảm giá ${selectedPrize.percentage}%`);
-    $("#discount-percentage").val(selectedPrize.percentage);
-    
-    $("#congratsModal").addClass('modal-zoom-in');
-    // congratsModal.show();
-    createConfetti();
-
-    setTimeout(() => {
-      $("#congratsModal").removeClass('modal-zoom-in');
-    }, 600);
-  }
-
-  // Các hàm khác giữ nguyên
+  // Form submission handler
   $("#user-form").submit(function(e) {
     e.preventDefault();
 
+    // Validation
     let isValid = true;
     const fullname = $("#fullname").val().trim();
     const email = $("#email").val().trim();
@@ -253,9 +118,11 @@ const prizeZones = [
 
     if (!isValid) return;
 
+    // Show loading state
     $("#submit-btn").prop('disabled', true);
     $("#loading-spinner").removeClass("d-none");
     $("#submit-text").addClass("d-none");
+    $("#success-message, #error-message").addClass("d-none");
 
     const formData = {
       fullname: fullname,
@@ -263,10 +130,13 @@ const prizeZones = [
       discountPercentage: selectedPrize.percentage
     };
 
+    // Gửi dữ liệu sử dụng formData (tránh CORS)
     sendDataWithFormData(formData);
   });
 
+  // Gửi dữ liệu với FormData để tránh lỗi CORS
   function sendDataWithFormData(data) {
+    // Lưu dữ liệu vào localStorage
     try {
       let savedData = JSON.parse(localStorage.getItem('luckyWheelData') || '[]');
       const discountCode = generateMockDiscountCode(data.discountPercentage);
@@ -281,27 +151,42 @@ const prizeZones = [
       
       localStorage.setItem('luckyWheelData', JSON.stringify(savedData));
       
+      // Tạo đối tượng response
       const response = {
         success: true,
         discountCode: discountCode,
         emailSent: true
       };
       
+      // Xử lý thành công
       handleSuccess(response);
       
+      // Gửi dữ liệu đến Google Script với FormData
       const formData = new FormData();
       for (const key in data) {
         formData.append(key, data[key]);
       }
       
+      // Fetch với mode 'no-cors'
       fetch(SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors',
         body: formData
+      })
+      .then(() => {
+        console.log('Dữ liệu đã được gửi đến Google Script');
+      })
+      .catch(error => {
+        console.error('Lỗi khi gửi dữ liệu:', error);
       });
       
     } catch (error) {
+      console.error('Lỗi khi lưu dữ liệu:', error);
+      
+      // Tạo mã giảm giá dự phòng trong trường hợp lỗi
       const backupCode = generateMockDiscountCode(data.discountPercentage);
+      
+      // Xử lý thành công với mã dự phòng
       handleSuccess({
         success: true,
         discountCode: backupCode,
@@ -310,18 +195,60 @@ const prizeZones = [
     }
   }
 
+  // Gửi dữ liệu sử dụng form ẩn
+  function sendDataWithHiddenForm(data) {
+    // Tạo form ẩn
+    const $form = $("<form>")
+      .attr("action", SCRIPT_URL)
+      .attr("method", "POST")
+      .attr("target", "hidden-iframe");
+      
+    // Thêm các trường dữ liệu
+    for (const key in data) {
+      $("<input>")
+        .attr("type", "hidden")
+        .attr("name", key)
+        .attr("value", data[key])
+        .appendTo($form);
+    }
+    
+    // Thêm form vào body
+    $form.appendTo("body");
+    
+    // Gửi form
+    $form.submit();
+    
+    // Xóa form
+    $form.remove();
+    
+    // Xử lý giả định thành công (vì iframe không thể trả về dữ liệu do CORS)
+    setTimeout(() => {
+      const discountCode = generateMockDiscountCode(data.discountPercentage);
+      handleSuccess({
+        success: true,
+        discountCode: discountCode,
+        emailSent: true
+      });
+    }, 1000);
+  }
+
+  // Xử lý khi gửi form thành công
   function handleSuccess(response) {
+    // Reset form state
     $("#submit-btn").prop('disabled', false);
     $("#loading-spinner").addClass("d-none");
     $("#submit-text").removeClass("d-none");
     
+    // Hiển thị thông báo thành công
     $("#success-message").removeClass("d-none");
     $("#user-form").addClass("d-none");
     
+    // Hiển thị mã giảm giá
     $("#discount-card").removeClass("d-none");
     $("#coupon-code").val(response.discountCode);
     $("#discount-info").text(`Mã giảm ${selectedPrize.percentage}% có thể sử dụng cho đơn hàng tiếp theo của bạn.`);
     
+    // Cập nhật trạng thái email
     setTimeout(() => {
       if (response.emailSent) {
         $("#email-status").html('<span class="text-success">✓ Mã giảm giá đã được gửi đến email của bạn!</span>');
@@ -331,6 +258,7 @@ const prizeZones = [
     }, 2000);
   }
 
+  // Copy button handler
   $("#copy-btn").click(function() {
     $("#coupon-code").select();
     document.execCommand("copy");
@@ -345,13 +273,91 @@ const prizeZones = [
     }, 1500);
   });
 
+  // Helper functions
+  function drawWheel(segments) {
+    const svg = $(".wheel");
+    const centerX = 250;
+    const centerY = 250;
+    const radius = 200;
+    const anglePerSegment = 360 / segments.length;
+
+    let svgContent = "";
+
+    // Create the segments
+    segments.forEach((segment, index) => {
+      const startAngle = index * anglePerSegment;
+      const endAngle = (index + 1) * anglePerSegment;
+
+      const startRad = ((startAngle - 90) * Math.PI) / 180;
+      const endRad = ((endAngle - 90) * Math.PI) / 180;
+
+      const x1 = centerX + radius * Math.cos(startRad);
+      const y1 = centerY + radius * Math.sin(startRad);
+      const x2 = centerX + radius * Math.cos(endRad);
+      const y2 = centerY + radius * Math.sin(endRad);
+
+      const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1;
+
+      const pathData = [
+        `M ${centerX},${centerY}`,
+        `L ${x1},${y1}`,
+        `A ${radius},${radius} 0 ${largeArcFlag} 1 ${x2},${y2}`,
+        "Z",
+      ].join(" ");
+
+      svgContent += `<path d="${pathData}" fill="${segment.color}" stroke="#ffffff" stroke-width="2" />`;
+
+      // Add text
+      const textAngle = startAngle + anglePerSegment / 2;
+      const textRad = ((textAngle - 90) * Math.PI) / 180;
+      const textX = centerX + radius * 0.75 * Math.cos(textRad);
+      const textY = centerY + radius * 0.75 * Math.sin(textRad);
+
+      svgContent += `
+        <text 
+          x="${textX}" 
+          y="${textY}" 
+          fill="white" 
+          font-size="14" 
+          font-weight="bold" 
+          text-anchor="middle"
+          transform="rotate(${textAngle}, ${textX}, ${textY})"
+        >
+          ${segment.percentage}%
+        </text>
+      `;
+    });
+
+    // Add a circle in the center
+    svgContent += `<circle cx="${centerX}" cy="${centerY}" r="40" fill="#ffffff" stroke="#cccccc" stroke-width="2" />`;
+
+    svg.html(svgContent);
+  }
+
+  function shuffleArray(array) {
+    let currentIndex = array.length;
+    let temporaryValue, randomIndex;
+
+    while (0 !== currentIndex) {
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex -= 1;
+
+      temporaryValue = array[currentIndex];
+      array[currentIndex] = array[randomIndex];
+      array[randomIndex] = temporaryValue;
+    }
+
+    return array;
+  }
+
   function createConfetti() {
     const confettiCount = 100;
-    const $container = $(".ez-wheel-wrapper");
+    const $container = $(".wheel-container");
 
     for (let i = 0; i < confettiCount; i++) {
       const $confetti = $("<div>").addClass("confetti");
-      const colors = ["#FFD700", "#2E7D32", "#4CAF50", "#FFD54F"];
+
+      const colors = ["#f00", "#0f0", "#00f", "#ff0", "#0ff", "#f0f"];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
       $confetti.css({
@@ -364,6 +370,7 @@ const prizeZones = [
 
       $container.append($confetti);
 
+      // Remove confetti after animation
       setTimeout(() => {
         $confetti.remove();
       }, 5000);
@@ -377,11 +384,13 @@ const prizeZones = [
 
   function generateMockDiscountCode(percentage) {
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let result = `EZTECH${percentage}_`;
-    const length = 6;
+    let result = `SAVE${percentage}_`;
+    const length = 8;
 
     for (let i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * characters.length));
+      result += characters.charAt(
+        Math.floor(Math.random() * characters.length)
+      );
     }
 
     return result;
