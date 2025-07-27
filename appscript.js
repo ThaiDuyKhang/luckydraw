@@ -5,95 +5,78 @@ function doGet() {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
-//Hàm lấy mã giảm giá chưa sử dụng từ sheet DSM theo mức giảm
-function getUnusedDiscountCode(discountLevel) {
-  try {
-    const dsmSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("DSM");
-    const dsmData = dsmSheet.getDataRange().getValues();
-    
-    console.log("Tổng số dòng trong DSM:", dsmData.length);
-    console.log("Đang tìm mã cho mức giảm:", discountLevel);
-    
-    // Chuyển discountLevel thành số thập phân để so sánh (20 -> 0.2, 30 -> 0.3...)
-    const targetValue = discountLevel / 100;
-    console.log("Giá trị tìm kiếm (thập phân):", targetValue);
-    
-    // Bỏ qua hàng tiêu đề
-    for (let i = 1; i < dsmData.length; i++) {
-      const discountPercent = dsmData[i][0]; // Cột A
-      const discountCode = dsmData[i][1];    // Cột B  
-      const isUsed = dsmData[i][2];          // Cột C
-      
-      console.log(`Dòng ${i+1}: ${discountPercent} | ${discountCode} | ${isUsed}`);
-      
-      // Kiểm tra mức giảm giá khớp (so sánh số với số)
-      if (discountPercent === targetValue) {
-        console.log("Tìm thấy mức giảm giá khớp!");
-        
-        // Kiểm tra mã chưa được sử dụng (cột C trống)
-        if (isUsed === "" || isUsed === null || isUsed === undefined) {
-          console.log("Mã chưa được sử dụng, đánh dấu là đã sử dụng");
-          
-          // Đánh dấu mã đã được sử dụng
-          dsmSheet.getRange(i + 1, 3).setValue("Đã sử dụng");
-          
-          console.log("Trả về mã:", discountCode);
-          return discountCode;
-        } else {
-          console.log("Mã đã được sử dụng, bỏ qua");
-        }
-      } else {
-        console.log(`Không khớp: ${discountPercent} !== ${targetValue}`);
-      }
-    }
-    
-    console.log("Không tìm thấy mã phù hợp");
-    return null;
-    
-  } catch (error) {
-    console.error("Lỗi trong getUnusedDiscountCode:", error.message);
-    return null;
-  }
+// Tạo mã giảm giá unique
+function generateDiscountCode(discountPercentage) {
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const randomString = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `EZ${discountPercentage}_${timestamp}${randomString}`;
 }
 
 // Gửi email người chơi
 function sendDiscountEmail(email, fullname, discountCode, discountPercentage) {
   try {
-    // Tạo chủ đề email
-    const subject = "Mã giảm giá VPS EZ TECH của bạn từ Vòng Quay May Mắn";
+    console.log("Gửi email đến:", email);
     
-    // Tạo nội dung HTML cho email
+    // Validation cơ bản
+    if (!email || !fullname || !discountCode || !discountPercentage) {
+      return false;
+    }
+
+    // Tạo chủ đề email
+    const subject = "🎉 Mã giảm giá VPS từ Vòng Quay May Mắn EZ TECH ";
+    
+    // Tạo nội dung HTML cho email với thiết kế coupon
     const htmlBody = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
-        <div style="text-align: center; margin-bottom: 20px;">
-          <h1 style="color: #38d299;">Vòng Quay May Mắn EZtech</h1>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background: #fff;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #FF6B35; margin-bottom: 10px;">🎁 Vòng Quay May Mắn EZtech</h1>
+          <p style="color: #666; font-size: 18px;">Chúc mừng <strong>${fullname}</strong> đã trúng thưởng!</p>
         </div>
 
-        <p>Xin chào <b>${fullname}</b>,</p>
-
-        <p>Chúc mừng bạn đã quay trúng <b>mã giảm giá ${discountPercentage}%</b> từ Vòng Quay May Mắn của EZ TECH!</p>
-              
-        <div style="background-color: #f8f9fa; border: 1px dashed #ccc; padding: 15px; margin: 20px 0; text-align:center;color:#111">
-          <p style="margin: 0; font-size: 14px;">Mã giảm giá của bạn:</p>
-          <h2 style="margin: 10px 0; color: #FF5722; letter-spacing: 1px;">${discountCode}</h2>
-          <p style="margin: 0; font-size: 14px;">Giảm ${discountPercentage}% cho đơn hàng của bạn</p>
+        <div style="background: linear-gradient(135deg, #FF6B35 0%, #F7931E 50%, #FFD23F 100%); border-radius: 15px; padding: 25px; margin: 25px 0; text-align: center; color: white; position: relative;">
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 2px; height: 100%; background: repeating-linear-gradient(to bottom, transparent 0px, transparent 8px, rgba(255,255,255,0.3) 8px, rgba(255,255,255,0.3) 12px);"></div>
+          <h2 style="margin: 0 0 15px 0; font-size: 24px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🎁 Mã giảm giá của bạn</h2>
+          <div style="background: rgba(255,255,255,0.95); color: #FF5722; padding: 15px; border-radius: 8px; margin: 15px 0; font-size: 28px; font-weight: bold; letter-spacing: 3px; text-shadow: none;">${discountCode}</div>
+          <p style="margin: 15px 0 0 0; font-size: 18px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">GIẢM ${discountPercentage}% CHO TẤT CẢ DỊCH VỤ VPS</p>
         </div>
 
-        <p>Để sử dụng mã giảm giá này, hãy nhập mã khi thanh toán trên website của EZ TECH.</p>
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0;">
+          <h3 style="color: #246d4b; margin-top: 0; font-size: 18px;">Hướng dẫn sử dụng mã giảm giá:</h3>
+          <ol style="color: #333; margin: 0; line-height: 1.6;">
+            <li>Truy cập website: <a href="https://eztech.vn/" target="_blank" style="color: #FF6B35; font-weight: bold;">https://eztech.vn</a></li>
+            <li>Chọn gói VPS phù hợp với nhu cầu</li>
+            <li>Nhập mã <strong style="color: #FF5722;">${discountCode}</strong> khi thanh toán</li>
+            <li>Nhận ngay ưu đãi ${discountPercentage}% và bắt đầu sử dụng!</li>
+          </ol>
+        </div>
 
-        <p>Cảm ơn bạn đã tham gia chương trình của EZ TECH</p>
+        <div style="background: linear-gradient(45deg, #e8f5e8, #f0f8f0); padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+          <p style="margin: 0; color: #155724; font-weight: bold;">⏰ Lưu ý quan trọng:</p>
+          <p style="margin: 5px 0 0 0; color: #155724;">Mã giảm giá có thể có thời hạn sử dụng. Hãy sử dụng sớm để không bỏ lỡ ưu đãi tuyệt vời này!</p>
+        </div>
 
-        <p>Liên hệ</p>
-        - Website: <a href="https://eztech.vn/" target="_blank">https://eztech.vn</a></li>
-        - Địa chỉ: <a href="https://maps.app.goo.gl/SGg4RYmnArjmwZy56" target="_blank">Số 72 Đường số 6, KDC Cityland Park Hills, P.Gò Vấp. TP.HCM</a></li>
-        - Hotline: <a href="tel:0877223579" target="_blank">0877.223.579</a></li>
-        - Zalo: <a href="https://zalo.me/0877223579" target="_blank">0877.223.579</a></li>
-        - Email: <a href="mailto:support@eztech.com.vn" target="_blank">support@eztech.com.vn</a></li>
-        - Facebook: <a href="https://www.facebook.com/profile.php?id=61565699495989" target="_blank">Eztech.vn - Cloud VPS & Hosting - Server GPU</a></li>
+        <div style="text-align: center; margin: 30px 0;">
+          <p style="font-size: 16px; color: #333; margin-bottom: 15px;">Cảm ơn <strong>${fullname}</strong> đã tham gia chương trình của EZ TECH! 🙏</p>
+        </div>
 
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #777777; text-align: center;">
-          <p>Email này được gửi tự động, vui lòng không trả lời.</p>
-          <p>&copy; ${new Date().getFullYear()} eztech.vn. Tất cả các quyền được bảo lưu.</p>
+        <div style="background-color: #246d4b; color: white; padding: 20px; border-radius: 10px; margin: 20px 0;">
+          <h4 style="margin-top: 0; font-size: 16px;">📞 Hỗ trợ khách hàng 24/7:</h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 15px;">
+            <div style="flex: 1; min-width: 200px;">
+              <p style="margin: 5px 0;"><strong>🌐 Website:</strong> <a href="https://eztech.vn/" target="_blank" style="color: #FFD23F;">eztech.vn</a></p>
+              <p style="margin: 5px 0;"><strong>📞 Hotline:</strong> <a href="tel:0877223579" style="color: #FFD23F;">0877.223.579</a></p>
+              <p style="margin: 5px 0;"><strong>💬 Zalo:</strong> <a href="https://zalo.me/0877223579" target="_blank" style="color: #FFD23F;">0877.223.579</a></p>
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+              <p style="margin: 5px 0;"><strong>✉️ Email:</strong> <a href="mailto:support@eztech.com.vn" style="color: #FFD23F;">support@eztech.com.vn</a></p>
+              <p style="margin: 5px 0;"><strong>📍 Địa chỉ:</strong> <a href="https://maps.app.goo.gl/SGg4RYmnArjmwZy56" target="_blank" style="color: #FFD23F;">KDC Cityland Park Hills, Gò Vấp, TP.HCM</a></p>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: center; padding: 20px 0; border-top: 1px solid #eee; margin-top: 30px;">
+          <p style="margin: 0; font-size: 12px; color: #888;">📧 Email này được gửi tự động từ hệ thống Vòng Quay May Mắn EZ TECH</p>
+          <p style="margin: 5px 0 0 0; font-size: 12px; color: #888;">&copy; ${new Date().getFullYear()} EZ TECH. All rights reserved.</p>
         </div>
       </div>
     `;
@@ -103,62 +86,68 @@ function sendDiscountEmail(email, fullname, discountCode, discountPercentage) {
       to: email,
       subject: subject,
       htmlBody: htmlBody,
-      name: "Eztech.vn"
+      name: "EZtech.vn - VPS, Hosting, Cho thuê chỗ đặt & máy chủ vật lý, Server GPU",
     });
     
+    console.log("Gửi email thành công!");
     return true;
+    
   } catch (error) {
-    console.error("Lỗi khi gửi email: " + error.message);
+    console.error("Lỗi khi gửi email:", error.message);
     return false;
   }
 }
 
+// Hàm xử lý POST request - Đã tối ưu
 function doPost(e) {
   try {
+    console.log("=== XỬ LÝ REQUEST ===");
+    
     let data;
     
-    console.log("Received POST request");
-    console.log("e.parameter:", e.parameter);
-    console.log("e.postData:", e.postData);
-    
-    // Xác định cách dữ liệu được gửi đến
+    // Xử lý dữ liệu đầu vào
     if (e.postData && e.postData.contents) {
-      // JSON POST
       console.log("Processing JSON data");
       data = JSON.parse(e.postData.contents);
     } else if (e.parameter) {
-      // Form submission (FormData)
       console.log("Processing Form data");
       data = {
         fullname: e.parameter.fullname,
         email: e.parameter.email,
-        discountPercentage: parseInt(e.parameter.discountPercentage) || spinWheel()
+        discountPercentage: parseInt(e.parameter.discountPercentage)
       };
     } else {
-      throw new Error('No data received');
+      throw new Error('Không nhận được dữ liệu');
     }
     
-    // Truy cập Google Spreadsheet
+    console.log("Dữ liệu nhận được:", data);
+    
+    // Validation
+    if (!data.fullname || !data.email || !data.discountPercentage) {
+      throw new Error('Thiếu thông tin bắt buộc');
+    }
+    
+    // Tạo mã giảm giá unique (không cần dò sheet DSM nữa)
+    const discountCode = generateDiscountCode(data.discountPercentage);
+    console.log("Mã giảm giá được tạo:", discountCode);
+    
+    // Lưu dữ liệu vào Google Sheets
     const ss = SpreadsheetApp.openById('1lHI2kIc5l2-SECJws20RogL1Fv983CE6Fwy2Bn3GX58');
-    const dataSheet = ss.getSheetByName('DSTT'); // Sheet dữ liệu chính
-    const codesSheet = ss.getSheetByName('DSM'); // Sheet mã giảm giá
+    const dataSheet = ss.getSheetByName('DSTT');
     
-    // Sử dụng hàm getUnusedDiscountCode để lấy mã
-    let discountCode = getUnusedDiscountCode(data.discountPercentage);
+    const timestamp = new Date();
+    const newRow = [
+      data.fullname, 
+      data.email, 
+      discountCode, 
+      data.discountPercentage, 
+      timestamp,
+    ];
     
-    // Nếu không tìm thấy mã có sẵn, tạo mã mới
-    if (!discountCode) {
-      discountCode = "SALE" + data.discountPercentage + "_" + Math.random().toString(36).substring(2, 10).toUpperCase();
-      console.log("Không còn mã có sẵn, đã tạo mã mới: " + discountCode);
-    } else {
-      console.log("Đã sử dụng mã có sẵn: " + discountCode);
-    }
-    
-    // Thêm dữ liệu người dùng vào sheet chính
-    const newRow = [data.fullname, data.email, discountCode, data.discountPercentage, new Date()];
     dataSheet.appendRow(newRow);
+    console.log("Đã lưu dữ liệu vào Google Sheets");
     
-    // Gửi email mã giảm giá
+    // Gửi email
     const emailSent = sendDiscountEmail(data.email, data.fullname, discountCode, data.discountPercentage);
     
     // Tạo response
@@ -166,111 +155,38 @@ function doPost(e) {
       success: true,
       discountCode: discountCode,
       emailSent: emailSent,
-      message: discountCode.startsWith("SALE") ? "Đã tạo mã mới" : "Đã sử dụng mã có sẵn"
+      message: "Xử lý thành công",
+      timestamp: timestamp.toISOString()
     };
     
-    // Xử lý JSONP callback nếu có
+    console.log("Response:", response);
+    
+    // Xử lý JSONP callback
     if (e.parameter && e.parameter.callback) {
       return ContentService.createTextOutput(e.parameter.callback + '(' + JSON.stringify(response) + ')')
         .setMimeType(ContentService.MimeType.JAVASCRIPT);
     }
     
-    // Trả về JSON nếu không phải JSONP
+    // Trả về JSON
     return ContentService.createTextOutput(JSON.stringify(response))
       .setMimeType(ContentService.MimeType.JSON);
       
   } catch (error) {
-    console.error("Lỗi trong doPost: " + error.message);
+    console.error("Lỗi trong doPost:", error.message);
     
-    // Xử lý lỗi
     const errorResponse = {
       success: false,
-      error: error.message
+      error: error.message,
+      timestamp: new Date().toISOString()
     };
     
-    // Xử lý JSONP callback nếu có
+    // Xử lý JSONP callback cho lỗi
     if (e.parameter && e.parameter.callback) {
       return ContentService.createTextOutput(e.parameter.callback + '(' + JSON.stringify(errorResponse) + ')')
         .setMimeType(ContentService.MimeType.JAVASCRIPT);
     }
     
-    // Trả về JSON error nếu không phải JSONP
     return ContentService.createTextOutput(JSON.stringify(errorResponse))
       .setMimeType(ContentService.MimeType.JSON);
   }
-}
-
-// Hàm để quay vòng quay may mắn và trả về kết quả
-function spinWheel() {
-  // Các mức giảm giá có thể (20%, 30%, 40%, 50%)
-  const discountLevels = [20, 30, 40, 50];
-  
-  // Xác suất cho từng mức giảm (giảm dần theo mức giảm)
-  const probabilities = [0.4, 0.3, 0.2, 0.1]; // Tổng xác suất = 1
-  
-  // Tạo mảng tích lũy xác suất
-  const cumulativeProbabilities = [];
-  let sum = 0;
-  for (let i = 0; i < probabilities.length; i++) {
-    sum += probabilities[i];
-    cumulativeProbabilities.push(sum);
-  }
-  
-  // Tạo số ngẫu nhiên từ 0 đến 1
-  const randomValue = Math.random();
-  
-  // Xác định mức giảm giá dựa trên xác suất
-  for (let i = 0; i < cumulativeProbabilities.length; i++) {
-    if (randomValue <= cumulativeProbabilities[i]) {
-      return discountLevels[i];
-    }
-  }
-  
-  // Mặc định trả về mức giảm thấp nhất nếu có lỗi
-  return discountLevels[0];
-}
-
-// Hàm debug để kiểm tra dữ liệu trong sheet DSM
-function debugDSMSheet() {
-  try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("DSM");
-    const data = sheet.getDataRange().getValues();
-    
-    console.log("=== DEBUG SHEET DSM ===");
-    console.log("Tổng số dòng:", data.length);
-    console.log("Tổng số cột:", data[0] ? data[0].length : 0);
-    
-    for (let i = 0; i < Math.min(10, data.length); i++) {
-      console.log(`Row ${i+1}: [${data[i][0]}] [${data[i][1]}] [${data[i][2]}]`);
-      console.log(`Types: [${typeof data[i][0]}] [${typeof data[i][1]}] [${typeof data[i][2]}]`);
-      console.log(`Values: A="${data[i][0]}" B="${data[i][1]}" C="${data[i][2]}"`);
-      console.log("---");
-    }
-  } catch (error) {
-    console.error("Lỗi khi debug sheet:", error.message);
-  }
-}
-
-// Hàm test để kiểm tra việc lấy mã giảm giá
-function testGetDiscountCode() {
-  console.log("=== TEST LẤY MÃ GIẢM GIÁ ===");
-  
-  const result20 = getUnusedDiscountCode(20);
-  const result30 = getUnusedDiscountCode(30);
-  const result40 = getUnusedDiscountCode(40);
-  const result50 = getUnusedDiscountCode(50);
-  
-  console.log("Mã 20%: " + result20);
-  console.log("Mã 30%: " + result30);
-  console.log("Mã 40%: " + result40);
-  console.log("Mã 50%: " + result50);
-}
-
-// Hàm test tổng hợp
-function runAllTests() {
-  console.log("BẮT ĐẦU TEST TỔNG HỢP");
-  debugDSMSheet();
-  console.log("\n");
-  testGetDiscountCode();
-  console.log("KẾT THÚC TEST");
 }
