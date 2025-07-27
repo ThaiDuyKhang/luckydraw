@@ -52,7 +52,7 @@ $(document).ready(function() {
   // Draw the wheel
   drawWheel(segments);
 
-  // Spin button click handler - FIX: Sử dụng đúng ID từ HTML
+  // Spin button click handler
   $("#ez-spin-btn").click(function() {
     if (isSpinning) return;
 
@@ -77,11 +77,10 @@ $(document).ready(function() {
     // Calculate rotation angle
     const segmentAngle = 360 / segments.length;
     const segmentMiddle = segmentIndex * segmentAngle + segmentAngle / 2;
-    // FIX: Tính toán góc quay chính xác hơn
     const extraSpins = 3; // Số vòng quay thêm
     const spinAngle = extraSpins * 360 + (360 - segmentMiddle);
 
-    // Rotate the wheel with CSS animation - FIX: Sử dụng đúng selector
+    // Rotate the wheel with CSS animation
     $('.custom-wheel').css({
       'transform': `rotate(${spinAngle}deg)`,
       'transition': 'transform 4s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
@@ -112,10 +111,10 @@ $(document).ready(function() {
       setTimeout(() => {
         $("#congratsModal").removeClass('modal-zoom-in');
       }, 600);
-    }, 4000); // FIX: Thời gian khớp với animation
+    }, 4000);
   });
 
-  // Form submission handler
+  // Form submission handler - FIXED: Gửi dữ liệu thật đến Google Apps Script
   $("#user-form").submit(function(e) {
     e.preventDefault();
 
@@ -154,73 +153,64 @@ $(document).ready(function() {
       discountPercentage: selectedPrize.percentage
     };
 
-    // Gửi dữ liệu
-    sendDataWithFormData(formData);
+    // FIXED: Gửi dữ liệu thật đến Google Apps Script
+    sendDataToGoogleAppsScript(formData);
   });
 
-  // FIX: Cải thiện hàm gửi dữ liệu
-  function sendDataWithFormData(data) {
-    try {
-      // Tạo mã giảm giá
-      const discountCode = generateMockDiscountCode(data.discountPercentage);
+  // FIXED: Hàm gửi dữ liệu thật đến Google Apps Script
+  function sendDataToGoogleAppsScript(data) {
+    console.log("Đang gửi dữ liệu đến Google Apps Script:", data);
+
+    // Tạo FormData để gửi
+    const formData = new FormData();
+    formData.append('fullname', data.fullname);
+    formData.append('email', data.email);
+    formData.append('discountPercentage', data.discountPercentage);
+
+    // Sử dụng JSONP để tránh CORS (khuyên dùng cách này)
+    const callbackName = 'jsonpCallback_' + Date.now();
+    
+    // Tạo script tag để gửi JSONP request
+    const script = document.createElement('script');
+    script.src = SCRIPT_URL + '?' + 
+                 'fullname=' + encodeURIComponent(data.fullname) + 
+                 '&email=' + encodeURIComponent(data.email) + 
+                 '&discountPercentage=' + data.discountPercentage + 
+                 '&callback=' + callbackName;
+
+    // Tạo callback function để nhận response
+    window[callbackName] = function(response) {
+      console.log("Nhận response từ Google Apps Script:", response);
       
-      // Lưu dữ liệu vào localStorage (nếu có thể)
-      if (typeof(Storage) !== "undefined") {
-        let savedData = JSON.parse(localStorage.getItem('luckyWheelData') || '[]');
-        savedData.push({
-          fullname: data.fullname,
-          email: data.email,
-          discountPercentage: data.discountPercentage,
-          discountCode: discountCode,
-          timestamp: new Date().toISOString()
-        });
-        localStorage.setItem('luckyWheelData', JSON.stringify(savedData));
+      // Cleanup
+      document.head.removeChild(script);
+      delete window[callbackName];
+      
+      if (response.success) {
+        handleSuccess(response);
+      } else {
+        handleError(response.error || "Có lỗi xảy ra");
       }
-      
-      // Xử lý thành công ngay lập tức
-      setTimeout(() => {
-        handleSuccess({
-          success: true,
-          discountCode: discountCode,
-          emailSent: true
-        });
-      }, 1500);
-      
-      // Gửi dữ liệu đến Google Script trong background
-      const formData = new FormData();
-      for (const key in data) {
-        formData.append(key, data[key]);
+    };
+
+    // Thêm timeout để xử lý trường hợp không có response
+    setTimeout(() => {
+      if (window[callbackName]) {
+        console.log("Timeout - không nhận được response, sử dụng fallback");
+        document.head.removeChild(script);
+        delete window[callbackName];
+        handleFallback(data);
       }
-      
-      fetch(SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: formData
-      })
-      .then(() => {
-        console.log('Dữ liệu đã được gửi đến Google Script');
-      })
-      .catch(error => {
-        console.error('Lỗi khi gửi dữ liệu:', error);
-      });
-      
-    } catch (error) {
-      console.error('Lỗi khi xử lý dữ liệu:', error);
-      
-      // Xử lý lỗi
-      setTimeout(() => {
-        const backupCode = generateMockDiscountCode(data.discountPercentage);
-        handleSuccess({
-          success: true,
-          discountCode: backupCode,
-          emailSent: false
-        });
-      }, 1500);
-    }
+    }, 10000); // 10 giây timeout
+
+    // Gửi request
+    document.head.appendChild(script);
   }
 
-  // Xử lý khi gửi form thành công
+  // FIXED: Xử lý khi nhận được response thành công từ Google Apps Script
   function handleSuccess(response) {
+    console.log("Xử lý thành công:", response);
+    
     // Reset form state
     $("#submit-btn").prop('disabled', false);
     $("#loading-spinner").addClass("d-none");
@@ -230,10 +220,10 @@ $(document).ready(function() {
     $("#success-message").removeClass("d-none");
     $("#user-form").addClass("d-none");
     
-    // Hiển thị mã giảm giá
-    // $("#discount-card").removeClass("d-none");
-    // $("#coupon-code").val(response.discountCode);
-    // $("#discount-info").text(`Mã giảm ${selectedPrize.percentage}% có thể sử dụng cho đơn hàng tiếp theo của bạn.`);
+    // Hiển thị mã giảm giá từ Google Apps Script
+    $("#discount-card").removeClass("d-none");
+    $("#coupon-code").val(response.discountCode);
+    $("#discount-info").text(`Mã giảm ${selectedPrize.percentage}% có thể sử dụng cho đơn hàng tiếp theo của bạn.`);
     
     // Cập nhật trạng thái email
     setTimeout(() => {
@@ -245,25 +235,52 @@ $(document).ready(function() {
     }, 2000);
   }
 
-  // Copy button handler
-  // $(document).on('click', '#copy-btn', function() {
-  //   const couponCode = $("#coupon-code").val();
+  // FIXED: Xử lý khi có lỗi từ Google Apps Script
+  function handleError(errorMessage) {
+    console.error("Lỗi từ Google Apps Script:", errorMessage);
     
-  //   // Modern clipboard API
-  //   if (navigator.clipboard) {
-  //     navigator.clipboard.writeText(couponCode).then(() => {
-  //       showCopySuccess($(this));
-  //     }).catch(() => {
-  //       // Fallback method
-  //       fallbackCopyTextToClipboard(couponCode, $(this));
-  //     });
-  //   } else {
-  //     // Fallback method
-  //     fallbackCopyTextToClipboard(couponCode, $(this));
-  //   }
-  // });
+    // Reset form state
+    $("#submit-btn").prop('disabled', false);
+    $("#loading-spinner").addClass("d-none");
+    $("#submit-text").removeClass("d-none");
+    
+    // Hiển thị thông báo lỗi
+    $("#error-message").removeClass("d-none").text("Lỗi: " + errorMessage);
+  }
 
-  // FIX: Cải thiện hàm copy
+  // FIXED: Xử lý fallback khi không nhận được response
+  function handleFallback(data) {
+    console.log("Sử dụng fallback - tạo mã giảm giá tạm thời");
+    
+    // Tạo mã giảm giá tạm thời
+    const tempCode = generateTempDiscountCode(data.discountPercentage);
+    
+    handleSuccess({
+      success: true,
+      discountCode: tempCode,
+      emailSent: false,
+      message: "Sử dụng mã tạm thời"
+    });
+  }
+
+  // Copy button handler
+  $(document).on('click', '#copy-btn', function() {
+    const couponCode = $("#coupon-code").val();
+    
+    // Modern clipboard API
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(couponCode).then(() => {
+        showCopySuccess($(this));
+      }).catch(() => {
+        // Fallback method
+        fallbackCopyTextToClipboard(couponCode, $(this));
+      });
+    } else {
+      // Fallback method
+      fallbackCopyTextToClipboard(couponCode, $(this));
+    }
+  });
+
   function fallbackCopyTextToClipboard(text, $btn) {
     const textArea = document.createElement("textarea");
     textArea.value = text;
@@ -300,7 +317,7 @@ $(document).ready(function() {
     const svg = $(".wheel");
     const centerX = 250;
     const centerY = 250;
-    const radius = 250; // Tăng radius để vòng quay to bằng viền
+    const radius = 250;
     const anglePerSegment = 360 / segments.length;
 
     let svgContent = "";
@@ -327,21 +344,19 @@ $(document).ready(function() {
         "Z",
       ].join(" ");
 
-      // Loại bỏ stroke để không có khoảng trắng
       svgContent += `<path d="${pathData}" fill="${segment.color}" />`;
 
-      // Add text với màu tương phản dựa trên màu nền
+      // Add text
       const textAngle = startAngle + anglePerSegment / 2;
       const textRad = ((textAngle - 90) * Math.PI) / 180;
       const textX = centerX + radius * 0.7 * Math.cos(textRad);
       const textY = centerY + radius * 0.7 * Math.sin(textRad);
       
-      // Chọn màu text tương phản cho từng màu nền
       let textColor;
       if (segment.color === "#ffeab9" || segment.color === "#ffcc80") {
-        textColor = "#246d4b"; // Text xanh đậm cho nền vàng/cam nhạt
+        textColor = "#246d4b";
       } else {
-        textColor = "#ffeab9"; // Text vàng nhạt cho nền xanh đậm
+        textColor = "#ffeab9";
       }
 
       svgContent += `
@@ -360,7 +375,7 @@ $(document).ready(function() {
       `;
     });
 
-    // Center circle nhỏ hơn
+    // Center circle
     svgContent += `<circle cx="${centerX}" cy="${centerY}" r="25" fill="#246d4b" />`;
     
     // Logo EZ ở giữa
@@ -393,11 +408,9 @@ $(document).ready(function() {
       }
     }
     
-    // Fallback - trả về giải thưởng cuối cùng
     return prizes[prizes.length - 1];
   }
 
-  // Hàm hiển thị thống kê tỷ lệ trúng (debug)
   function showProbabilityStats() {
     console.log("=== TỶ LỆ TRÚNG THƯỞNG ===");
     prizes.forEach(prize => {
@@ -408,7 +421,6 @@ $(document).ready(function() {
     console.log(`Tổng xác suất: ${(totalProb * 100).toFixed(1)}%`);
   }
 
-  // Hiển thị stats khi load trang
   showProbabilityStats();
 
   function shuffleArray(array) {
@@ -420,7 +432,6 @@ $(document).ready(function() {
     return newArray;
   }
 
-  // FIX: Cải thiện hiệu ứng confetti
   function createConfetti() {
     const confettiCount = 150;
     const colors = ["#ff6b6b", "#4ecdc4", "#45b7d1", "#f9ca24", "#f0932b", "#eb4d4b", "#6c5ce7"];
@@ -448,7 +459,6 @@ $(document).ready(function() {
 
       $('body').append(confetti);
 
-      // Remove confetti after animation
       setTimeout(() => {
         confetti.remove();
       }, (randomDelay + randomDuration) * 1000);
@@ -460,8 +470,9 @@ $(document).ready(function() {
     return emailRegex.test(email);
   }
 
-  function generateMockDiscountCode(percentage) {
-    const prefix = `EZTECH${percentage}`;
+  // FIXED: Tạo mã tạm thời khi không kết nối được Google Apps Script
+  function generateTempDiscountCode(percentage) {
+    const prefix = `TEMP${percentage}_`;
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let suffix = "";
     
@@ -472,11 +483,10 @@ $(document).ready(function() {
     return prefix + suffix;
   }
 
-  // FIX: Thêm event handler cho việc reset wheel khi modal đóng
+  // Admin panel code giữ nguyên...
   let adminMode = false;
   
   $(document).keydown(function(e) {
-    // Ctrl+Shift+A để bật/tắt admin mode
     if (e.ctrlKey && e.shiftKey && e.key === 'A') {
       adminMode = !adminMode;
       toggleAdminPanel();
@@ -492,7 +502,6 @@ $(document).ready(function() {
   }
 
   function showAdminPanel() {
-    // Tạo admin panel nếu chưa có
     if ($('#admin-panel').length === 0) {
       createAdminPanel();
     }
@@ -528,7 +537,6 @@ $(document).ready(function() {
     
     $('body').append(adminHTML);
     
-    // Tạo controls cho từng giải thưởng
     prizes.forEach((prize, index) => {
       const controlHTML = `
         <div class="mb-2">
@@ -548,7 +556,6 @@ $(document).ready(function() {
       $('#probability-controls').append(controlHTML);
     });
     
-    // Event handlers
     $('.probability-slider').on('input', function() {
       const index = $(this).data('index');
       const value = $(this).val();
@@ -574,12 +581,10 @@ $(document).ready(function() {
       total += value;
     });
     
-    // Cảnh báo nếu tổng không bằng 100%
     if (Math.abs(total - 1) > 0.01) {
       alert(`Cảnh báo: Tổng tỷ lệ là ${(total * 100).toFixed(1)}%. Nên để tổng = 100% để chính xác.`);
     }
     
-    // Cập nhật tỷ lệ
     prizes.forEach((prize, index) => {
       prize.probability = newProbabilities[index];
     });
@@ -604,15 +609,14 @@ $(document).ready(function() {
     showProbabilityStats();
     alert('Đã reset về tỷ lệ mặc định!');
   }
+
   $('#congratsModal').on('hidden.bs.modal', function () {
-    // Reset form khi đóng modal
     $("#user-form")[0].reset();
     $("#user-form").removeClass("d-none");
     $("#success-message").addClass("d-none");
     $("#discount-card").addClass("d-none");
     $(".error-message").text("");
     
-    // Reset button state
     $("#submit-btn").prop('disabled', false);
     $("#loading-spinner").addClass("d-none");
     $("#submit-text").removeClass("d-none");
