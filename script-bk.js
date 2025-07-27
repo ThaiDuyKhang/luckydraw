@@ -36,6 +36,12 @@ $(document).ready(function() {
     handleFormSubmission();
   });
 
+  // Copy button handler
+  $(document).on('click', '#copy-btn', function() {
+    const couponCode = $("#coupon-code").val();
+    copyToClipboard(couponCode, $(this));
+  });
+
   // Reset modal khi đóng
   $('#congratsModal').on('hidden.bs.modal', function() {
     resetModal();
@@ -174,7 +180,7 @@ $(document).ready(function() {
       mode: 'no-cors'
     })
     .then(() => {
-      // Generate unique discount code (chỉ để gửi lên server, không hiển thị)
+      // Generate unique discount code
       const timestamp = Date.now().toString(36).toUpperCase();
       const discountCode = `WEB${data.discountPercentage}_${timestamp}`;
       
@@ -196,7 +202,7 @@ $(document).ready(function() {
     $("#success-message").removeClass("d-none");
     $("#user-form").addClass("d-none");
     
-    // Chỉ hiển thị trạng thái email, không hiển thị mã giảm giá
+    showDiscountCard(response.discountCode, response.emailSent);
     updateEmailStatus(response.emailSent);
   }
 
@@ -211,19 +217,64 @@ $(document).ready(function() {
     });
   }
 
+  function showDiscountCard(discountCode, emailSent) {
+    if ($("#discount-card").length === 0) {
+      const discountCardHTML = `
+        <div class="row mt-3" id="discount-card">
+          <div class="col-md-12">
+            <div class="card border-success">
+              <div class="card-header bg-success text-white d-flex align-items-center">
+                <span class="me-2">🎁</span>
+                <span>Thông Tin Mã Giảm Giá</span>
+              </div>
+              <div class="card-body text-center">
+                <h5 class="mb-3">Mã giảm giá của bạn:</h5>
+                <div class="d-flex align-items-center justify-content-center mb-3">
+                  <input type="text" id="coupon-code" class="form-control text-center fw-bold fs-5" 
+                         style="max-width: 300px; background: #f8f9fa; border: 2px solid #28a745;" readonly>
+                  <button class="btn btn-outline-success ms-2" id="copy-btn" title="Copy mã giảm giá">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                      <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z" />
+                      <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm-3 0h3v1h-3z" />
+                    </svg>
+                  </button>
+                </div>
+                <div class="alert alert-info mb-0" id="discount-info">
+                  <div class="d-flex align-items-center justify-content-center">
+                    <span class="me-2">💰</span>
+                    <span><strong>Giảm ${selectedPrize.percentage}%</strong> cho đơn hàng VPS tại <a href="https://eztech.vn" target="_blank">eztech.vn</a></span>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <small class="text-muted" id="email-note">
+                    📧 Mã giảm giá cũng đã được gửi đến email của bạn<br>
+                    (Kiểm tra cả thư mục spam/junk nếu không thấy)
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      $("#success-message").after(discountCardHTML);
+    }
+    
+    $("#discount-card").removeClass("d-none");
+    $("#coupon-code").val(discountCode);
+  }
+
   function updateEmailStatus(emailSent) {
     setTimeout(() => {
       if (emailSent) {
         $("#email-status").html(`
           <div class="d-flex flex-column align-items-center justify-content-center text-success">
-            <div id="success-lottie" style="width: 75px; height: 75px; margin-bottom: 15px;"></div>
-            <span class="text-center"><strong>🎉 Chúc mừng! Thông tin đã được gửi thành công!</strong><br>
-            <small>Mã giảm giá ${selectedPrize.percentage}% đã được gửi đến email của bạn<br>
-            Vui lòng kiểm tra hộp thư (bao gồm cả thư mục spam/junk)</small></span>
+            <div id="success-lottie" style="width: 75px; height: 75px;"></div>
+            <span><strong>Mã giảm giả đã được gửi đến email của bạn!</strong><br>
+            <small>Kiểm tra cả thư mục spam/junk nếu không thấy</small>
           </div>
         `);
 
-        // Load Lottie success animation
+          // Load Lottie success animation
         if (typeof lottie !== 'undefined') {
           lottie.loadAnimation({
             container: document.getElementById('success-lottie'),
@@ -243,14 +294,17 @@ $(document).ready(function() {
       } else {
         $("#email-status").html(`
           <div class="d-flex flex-column align-items-center justify-content-center text-warning">
-            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" fill="currentColor" class="bi bi-exclamation-triangle-fill mb-3" viewBox="0 0 16 16" style="color: #ffc107;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="75" height="75" fill="currentColor" class="bi bi-exclamation-triangle-fill me-2" viewBox="0 0 16 16">
               <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
             </svg>
-            <span class="text-center"><strong>⚠️ Không thể gửi email tự động</strong><br>
-            <small>Vui lòng liên hệ bộ phận hỗ trợ để nhận mã giảm giá ${selectedPrize.percentage}%:<br>
-            📞 Hotline: <a href="tel:0877223579">0877.223.579</a><br>
-            📧 Email: <a href="mailto:support@eztech.com.vn">support@eztech.com.vn</a></small></span>
+            <span><strong>Chế độ offline</strong><br>
           </div>
+        `);
+        
+        // Update email note
+        $("#email-note").html(`
+          <span class="text-warning">Không thể gửi email</span><br>
+          <small>Vui lòng lưu mã giảm giá này để sử dụng sau</small>
         `);
       }
     }, 1000);
@@ -272,12 +326,62 @@ $(document).ready(function() {
     $("#user-form")[0].reset();
     $("#user-form").removeClass("d-none");
     $("#success-message").addClass("d-none");
+    $("#discount-card").addClass("d-none");
     $("#error-message").addClass("d-none");
     $(".error-message").text("");
     setLoadingState(false);
   }
 
   // ==================== UTILITY FUNCTIONS ====================
+
+  function copyToClipboard(text, $btn) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        showCopySuccess($btn);
+      }).catch(() => {
+        fallbackCopyTextToClipboard(text, $btn);
+      });
+    } else {
+      fallbackCopyTextToClipboard(text, $btn);
+    }
+  }
+
+  function fallbackCopyTextToClipboard(text, $btn) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        showCopySuccess($btn);
+      }
+    } catch (err) {
+      console.error('Không thể copy mã giảm giá');
+    }
+    
+    document.body.removeChild(textArea);
+  }
+
+  function showCopySuccess($btn) {
+    const originalHtml = $btn.html();
+    $btn.html(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check" viewBox="0 0 16 16">
+        <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+      </svg>
+    `);
+    $btn.removeClass('btn-outline-success').addClass('btn-success');
+    
+    setTimeout(() => {
+      $btn.html(originalHtml);
+      $btn.removeClass('btn-success').addClass('btn-outline-success');
+    }, 1500);
+  }
 
   function drawWheel(segments) {
     const svg = $(".wheel");
@@ -402,7 +506,7 @@ $(document).ready(function() {
         renderer: 'svg',
         loop: false,
         autoplay: true,
-        path: './images/confetti.json'
+        path: './images/confetti.json' // URL của confetti animation
       });
 
       // Xóa animation sau khi hoàn thành
