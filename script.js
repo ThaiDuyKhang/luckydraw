@@ -1,12 +1,10 @@
 $(document).ready(function() {
   // URL của Google Apps Script
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3gO96QsPD17XN_54LXhGREHsL7-oIbqJb7xNzl7mueouSmpJxo0dif5H_PaMNrtIS/exec";
-
-  // Wheel configuration với tỷ lệ trúng tùy chỉnh
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFy0SIHPSaD7gaAY1zMmSfZuLOVg1mIB8mvp40CaPdeZeuJB39h7AG1pw6OsTqASJW/exec"; //LuckyDraw11
   const prizes = [
-    { percentage: 20, count: 8, probability: 0.5 },   // 50% xác suất trúng 20%
-    { percentage: 30, count: 6, probability: 0.3 },   // 30% xác suất trúng 30%
-    { percentage: 40, count: 4, probability: 0.15 },  // 15% xác suất trúng 40%
+    { percentage: 20, count: 6, probability: 0.5 },   // 50% xác suất trúng 20%
+    { percentage: 30, count: 5, probability: 0.3 },   // 30% xác suất trúng 30%
+    { percentage: 40, count: 3, probability: 0.15 },  // 15% xác suất trúng 40%
     { percentage: 50, count: 2, probability: 0.05 },  // 5% xác suất trúng 50%
   ];
 
@@ -217,9 +215,8 @@ $(document).ready(function() {
         $("#email-status").html(`
           <div class="d-flex flex-column align-items-center justify-content-center text-success">
             <div id="success-lottie" style="width: 75px; height: 75px; margin-bottom: 15px;"></div>
-            <span class="text-center"><strong>🎉 Chúc mừng! Thông tin đã được gửi thành công!</strong><br>
-            <small>Mã giảm giá ${selectedPrize.percentage}% đã được gửi đến email của bạn<br>
-            Vui lòng kiểm tra hộp thư (bao gồm cả thư mục spam/junk)</small></span>
+            <span class="text-center">🎉 Chúc mừng! <strong>Mã giảm giá ${selectedPrize.percentage}%</strong> đã được gửi đến email của bạn<br>
+            <small>Vui lòng kiểm tra hộp thư (inbox/spam/junk)</small></span>
           </div>
         `);
 

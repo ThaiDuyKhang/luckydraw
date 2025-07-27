@@ -22,7 +22,8 @@
                     <div class="ez-wheel-wrapper">
                         <div class="selector-pointer"></div>
                         <div class="custom-wheel position-relative">
-                            <img src="./images/wheel-border.png" alt="Vòng quay EZ TECH" class="wheel-image position-absolute" />
+                            <img src="./images/wheel-border-1.png" alt="Vòng quay EZ TECH"
+                                class="wheel-image position-absolute" />
                             <svg class="wheel" viewBox="0 0 500 500" width="700" height="700"></svg>
                         </div>
 
@@ -41,20 +42,25 @@
         data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title" id="congratsModalLabel">Chúc mừng bạn!</h5>
+                <img src="./images/text 2.png" alt="Chúc mừng bạn trúng thưởng"
+                    class="modal-header-image img-fluid mx-auto d-block mb-2" />
+                <div class="prize col-md-12 text-center my-5 bg-transparent">
+                    <div class="prize-card show" id="prize-card">
+                        <div class="left">
+                            <h2>COUPON</h2>
+                        </div>
+                        <div class="center">
+                            <div>
+                                <h4 id="prize-text" class="display-6 fw-bold my-3"></h4>
+                                <small>Hạn sử dụng đến hết 2026</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <div class="prize col-md-12 text-center mb-4">
-                            <div class="prize-card show" id="prize-card">
-                                <h3>Bạn đã trúng thưởng!</h3>
-                                <h4 id="prize-text" class="display-6 fw-bold my-3"></h4>
-                                <p>Vui lòng điền thông tin để nhận mã giảm giá.</p>
-                            </div>
-                        </div>
-
                         <div class="form-info col-md-12">
+                            <h4 class="text-center mb-4">Nhập thông tin nhận mã giảm giá</h4>
                             <!-- Form nhập thông tin -->
                             <form id="user-form">
                                 <div class="mb-3">
@@ -68,7 +74,7 @@
                                     <div class="error-message" id="email-error"></div>
                                 </div>
                                 <input type="hidden" id="discount-percentage" name="discountPercentage" value="">
-                                <button type="submit" class="btn btn-primary w-100" id="submit-btn">
+                                <button type="submit" class="btn bg-primary text-light w-100" id="submit-btn">
                                     <span id="submit-text">Gửi thông tin</span>
                                     <span id="loading-spinner" class="loading d-none"></span>
                                 </button>
@@ -79,7 +85,6 @@
                                 style="display: none; width: 0; height: 0; border: 0;"></iframe>
 
                             <div class="alert alert-success mt-3 d-none" id="success-message">
-                               Thông tin của bạn đã được gửi thành công!
                                 <div id="email-status" class="mt-2">
                                     <div class="spinner-border spinner-border-sm text-success" role="status">
                                         <span class="visually-hidden">Đang gửi email...</span>
