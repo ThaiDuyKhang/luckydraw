@@ -181,6 +181,7 @@ body {
     border-radius: 50%;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     object-fit: cover;
+    z-index: 99;
 }
 
 .selector-pointer {
