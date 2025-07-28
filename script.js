@@ -61,9 +61,9 @@ $(document).ready(function() {
     segments = shuffleArray(segments);
     segments.forEach((segment, index) => {
       if (segment.percentage === 50) {
-        segment.color = "#ffcc80";
+        segment.color = "#ffeab9";
       } else {
-        segment.color = index % 2 === 0 ? "#ffeab9" : "#246d4b";
+        segment.color = index % 2 === 0 ? "#f3ffe1" : "#246d4b";
       }
     });
 
@@ -314,7 +314,7 @@ $(document).ready(function() {
       const textX = centerX + radius * 0.7 * Math.cos(textRad);
       const textY = centerY + radius * 0.7 * Math.sin(textRad);
       
-      let textColor = (segment.color === "#ffeab9" || segment.color === "#ffcc80") ? "#246d4b" : "#ffeab9";
+      let textColor = (segment.color === "#f3ffe1" || segment.color === "#ffeab9") ? "#246d4b" : "#ffffff";
 
       svgContent += `
         <text 
