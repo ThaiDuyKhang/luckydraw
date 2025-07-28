@@ -1,6 +1,6 @@
 $(document).ready(function() {
   // URL của Google Apps Script
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFy0SIHPSaD7gaAY1zMmSfZuLOVg1mIB8mvp40CaPdeZeuJB39h7AG1pw6OsTqASJW/exec"; //LuckyDraw11
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyv7wD9ysha7EHUwE3md16FbmvJ2DzB1zHBbC2fjOk-aw_8Uh1phtcX4_bpORYV9QA/exec";
   const prizes = [
     { percentage: 20, count: 6, probability: 0.5 },   // 50% xác suất trúng 20%
     { percentage: 30, count: 5, probability: 0.3 },   // 30% xác suất trúng 30%
