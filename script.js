@@ -62,6 +62,8 @@ $(document).ready(function() {
     segments.forEach((segment, index) => {
       if (segment.percentage === 50) {
         segment.color = "#ffeab9";
+      } else if (segment.percentage === 100) {
+        segment.color =  "#cf1d1dff";
       } else {
         segment.color = index % 2 === 0 ? "#f3ffe1" : "#246d4b";
       }
