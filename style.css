@@ -1,6 +1,7 @@
-:root{
- --color-primary:#3dd397;
+:root {
+    --color-primary: #3dd397;
 }
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: #006B38;
@@ -19,7 +20,7 @@ body {
 
 .form-control:focus {
     border-color: #73fdc6 !important;
-    box-shadow: 0 0 0 .25rem rgb(61 211 151 / 25%)!important;
+    box-shadow: 0 0 0 .25rem rgb(61 211 151 / 25%) !important;
 }
 
 .wheel-container {
@@ -93,7 +94,7 @@ body {
     display: none;
 }
 
- h1.main-title{
+h1.main-title {
     width: 100%;
     height: auto;
     background: url('./images/main-text.png') no-repeat;
@@ -104,6 +105,7 @@ body {
     height: 200px;
     text-indent: -9999px;
 }
+
 @keyframes couponGlow {
     0% {
         box-shadow: 0 8px 25px #fffdc2;
@@ -405,6 +407,39 @@ body {
         opacity: 0;
         top: 100vh;
         transform: translateX(calc(100px - 50px)) rotateZ(720deg);
+    }
+}
+
+/* CSS Animation cho stars fallback */
+@keyframes starTwinkle {
+    0% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+@keyframes starFloat {
+
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+
+    25% {
+        transform: translateY(-20px) rotate(90deg);
+    }
+
+    50% {
+        transform: translateY(-10px) rotate(180deg);
+    }
+
+    75% {
+        transform: translateY(-15px) rotate(270deg);
     }
 }
 

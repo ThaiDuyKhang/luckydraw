@@ -1,41 +1,43 @@
-$(document).ready(function() {
+$(document).ready(function () {
   // URL của Google Apps Script
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHlSw5shW4jgx6mg-cFBBQHSHsOlChY6CBC5fIgBqko097XNjlo7D86l5qjNtgQZMP/exec";
+  const SCRIPT_URL =
+    "https://script.google.com/macros/s/AKfycbxHlSw5shW4jgx6mg-cFBBQHSHsOlChY6CBC5fIgBqko097XNjlo7D86l5qjNtgQZMP/exec";
   const prizes = [
-    { percentage: 20, count: 6, probability: 0.5 },   // 50% xác suất trúng 20%
-    { percentage: 30, count: 5, probability: 0.3 },   // 30% xác suất trúng 30%
-    { percentage: 40, count: 3, probability: 0.15 },  // 15% xác suất trúng 40%
-    { percentage: 50, count: 2, probability: 0.05 },  // 5% xác suất trúng 50%
+    { percentage: 20, count: 6, probability: 0.5 }, // 50% xác suất trúng 20%
+    { percentage: 30, count: 5, probability: 0.3 }, // 30% xác suất trúng 30%
+    { percentage: 40, count: 3, probability: 0.15 }, // 15% xác suất trúng 40%
+    { percentage: 50, count: 2, probability: 0.05 }, // 5% xác suất trúng 50%
   ];
 
   let segments = [];
   let totalSegments = 0;
   let selectedPrize = null;
   let isSpinning = false;
+  let starsAnimation = null;
 
   // Tạo modal bootstrap
   const congratsModal = new bootstrap.Modal($("#congratsModal")[0], {
-    backdrop: 'static',
-    keyboard: false
+    backdrop: "static",
+    keyboard: false,
   });
 
   // Initialize wheel
   initializeWheel();
 
   // Spin button click handler
-  $("#ez-spin-btn").click(function() {
+  $("#ez-spin-btn").click(function () {
     if (isSpinning) return;
     performSpin();
   });
 
   // Form submission handler
-  $("#user-form").submit(function(e) {
+  $("#user-form").submit(function (e) {
     e.preventDefault();
     handleFormSubmission();
   });
 
   // Reset modal khi đóng
-  $('#congratsModal').on('hidden.bs.modal', function() {
+  $("#congratsModal").on("hidden.bs.modal", function () {
     resetModal();
   });
 
@@ -52,7 +54,7 @@ $(document).ready(function() {
       for (let i = 0; i < prize.count; i++) {
         segments.push({
           percentage: prize.percentage,
-          color: null
+          color: null,
         });
       }
     });
@@ -63,7 +65,7 @@ $(document).ready(function() {
       if (segment.percentage === 50) {
         segment.color = "#ffeab9";
       } else if (segment.percentage === 100) {
-        segment.color =  "#cf1d1dff";
+        segment.color = "#cf1d1dff";
       } else {
         segment.color = index % 2 === 0 ? "#f3ffe1" : "#246d4b";
       }
@@ -76,18 +78,28 @@ $(document).ready(function() {
   function performSpin() {
     // Start spinning
     isSpinning = true;
-    $("#ez-spin-btn").css('pointer-events', 'none');
-    $(".spin-button-wrapper").addClass('spinning');
+    $("#ez-spin-btn").css("pointer-events", "none");
+    $(".spin-button-wrapper").addClass("spinning");
+
+    // Bắt đầu hiệu ứng sao khi quay
+    startStarsAnimation();
 
     // Determine winning segment
     selectedPrize = getRandomPrizeByProbability();
-    
+
     // Calculate rotation
-    const winningSegments = segments.filter(seg => seg.percentage === selectedPrize.percentage);
-    const randomWinningSegment = Math.floor(Math.random() * winningSegments.length);
-    const segmentIndex = segments.findIndex(seg => 
-      seg.percentage === selectedPrize.percentage && 
-      segments.filter(s => s.percentage === selectedPrize.percentage).indexOf(seg) === randomWinningSegment
+    const winningSegments = segments.filter(
+      (seg) => seg.percentage === selectedPrize.percentage
+    );
+    const randomWinningSegment = Math.floor(
+      Math.random() * winningSegments.length
+    );
+    const segmentIndex = segments.findIndex(
+      (seg) =>
+        seg.percentage === selectedPrize.percentage &&
+        segments
+          .filter((s) => s.percentage === selectedPrize.percentage)
+          .indexOf(seg) === randomWinningSegment
     );
 
     const segmentAngle = 360 / segments.length;
@@ -96,31 +108,135 @@ $(document).ready(function() {
     const spinAngle = extraSpins * 360 + (360 - segmentMiddle);
 
     // Animate wheel
-    $('.custom-wheel').css({
-      'transform': `rotate(${spinAngle}deg)`,
-      'transition': 'transform 4s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+    $(".custom-wheel").css({
+      transform: `rotate(${spinAngle}deg)`,
+      transition: "transform 4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
     });
 
     // Show result after animation
     setTimeout(() => {
       isSpinning = false;
-      $("#ez-spin-btn").css('pointer-events', 'auto');
-      $(".spin-button-wrapper").removeClass('spinning');
+      $("#ez-spin-btn").css("pointer-events", "auto");
+      $(".spin-button-wrapper").removeClass("spinning");
+
+      // Dừng hiệu ứng sao
+      stopStarsAnimation();
 
       showSpinResult();
     }, 4000);
   }
 
+  function startStarsAnimation() {
+    // Tạo container cho Lottie stars animation
+    const starsContainer = $(`
+    <div id="lottie-stars" style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 1000;
+    "></div>
+  `);
+
+    $("body").append(starsContainer);
+
+    // Load và play Lottie animation
+    if (typeof lottie !== "undefined") {
+      try {
+        starsAnimation = lottie.loadAnimation({
+          container: document.getElementById("lottie-stars"),
+          renderer: "svg",
+          loop: true, // Loop animation trong suốt quá trình quay
+          autoplay: true,
+          path: "./images/stars.json",
+        });
+
+        console.log("Stars animation started");
+      } catch (error) {
+        console.error("Error loading stars animation:", error);
+        // Fallback: Tạo hiệu ứng CSS đơn giản
+        createCSSStars();
+        starsContainer.remove();
+      }
+    } else {
+      console.log("Lottie not loaded, using CSS stars fallback");
+      createCSSStars();
+      starsContainer.remove();
+    }
+  }
+
+  function stopStarsAnimation() {
+    if (starsAnimation) {
+      starsAnimation.destroy();
+      starsAnimation = null;
+    }
+
+    // Xóa container stars
+    const starsContainer = $("#lottie-stars");
+    if (starsContainer.length) {
+      starsContainer.fadeOut(500, function () {
+        $(this).remove();
+      });
+    }
+
+    // Xóa CSS stars nếu có
+    $(".css-star").fadeOut(500, function () {
+      $(this).remove();
+    });
+
+    console.log("Stars animation stopped");
+  }
+
+  function createCSSStars() {
+    // Fallback CSS stars animation
+    const starCount = 15;
+    const colors = ["#ffd700", "#ffeb3b", "#fff59d", "#fff176", "#ffee58"];
+
+    for (let i = 0; i < starCount; i++) {
+      const star = $("<div>")
+        .addClass("css-star")
+        .css({
+          position: "fixed",
+          left: Math.random() * window.innerWidth + "px",
+          top: Math.random() * window.innerHeight + "px",
+          width: Math.random() * 20 + 10 + "px",
+          height: Math.random() * 20 + 10 + "px",
+          backgroundColor: colors[Math.floor(Math.random() * colors.length)],
+          zIndex: 1000,
+          borderRadius: "50%",
+          animation: `starTwinkle ${
+            Math.random() * 2 + 1
+          }s ease-in-out infinite alternate, starFloat ${
+            Math.random() * 4 + 3
+          }s ease-in-out infinite`,
+          boxShadow: `0 0 ${Math.random() * 20 + 10}px currentColor`,
+        });
+
+      // Thêm hiệu ứng ngôi sao với CSS
+      star.html("★").css({
+        color: colors[Math.floor(Math.random() * colors.length)],
+        fontSize: Math.random() * 15 + 10 + "px",
+        textAlign: "center",
+        lineHeight: star.css("height"),
+        textShadow: "0 0 10px currentColor",
+      });
+
+      $("body").append(star);
+    }
+  }
+
   function showSpinResult() {
     $("#prize-text").text(`Giảm giá ${selectedPrize.percentage}%`);
     $("#discount-percentage").val(selectedPrize.percentage);
-    
-    $("#congratsModal").addClass('modal-zoom-in');
+
+    $("#congratsModal").addClass("modal-zoom-in");
     congratsModal.show();
     createConfetti();
 
     setTimeout(() => {
-      $("#congratsModal").removeClass('modal-zoom-in');
+      $("#congratsModal").removeClass("modal-zoom-in");
     }, 600);
   }
 
@@ -154,7 +270,7 @@ $(document).ready(function() {
     const formData = {
       fullname: fullname,
       email: email,
-      discountPercentage: selectedPrize.percentage
+      discountPercentage: selectedPrize.percentage,
     };
 
     // Send data
@@ -163,51 +279,51 @@ $(document).ready(function() {
 
   function sendDataToServer(data) {
     const formData = new FormData();
-    formData.append('fullname', data.fullname);
-    formData.append('email', data.email);
-    formData.append('discountPercentage', data.discountPercentage);
-    formData.append('timestamp', new Date().toISOString());
+    formData.append("fullname", data.fullname);
+    formData.append("email", data.email);
+    formData.append("discountPercentage", data.discountPercentage);
+    formData.append("timestamp", new Date().toISOString());
 
     fetch(SCRIPT_URL, {
-      method: 'POST',
+      method: "POST",
       body: formData,
-      mode: 'no-cors'
+      mode: "no-cors",
     })
-    .then(() => {
-      // Generate unique discount code (chỉ để gửi lên server, không hiển thị)
-      const timestamp = Date.now().toString(36).toUpperCase();
-      const discountCode = `WEB${data.discountPercentage}_${timestamp}`;
-      
-      handleSuccess({
-        success: true,
-        discountCode: discountCode,
-        emailSent: true,
-        message: "Dữ liệu đã được gửi thành công"
+      .then(() => {
+        // Generate unique discount code (chỉ để gửi lên server, không hiển thị)
+        const timestamp = Date.now().toString(36).toUpperCase();
+        const discountCode = `WEB${data.discountPercentage}_${timestamp}`;
+
+        handleSuccess({
+          success: true,
+          discountCode: discountCode,
+          emailSent: true,
+          message: "Dữ liệu đã được gửi thành công",
+        });
+      })
+      .catch((error) => {
+        handleFallback(data);
       });
-    })
-    .catch(error => {
-      handleFallback(data);
-    });
   }
 
   function handleSuccess(response) {
     setLoadingState(false);
-    
+
     $("#success-message").removeClass("d-none");
     $("#user-form").addClass("d-none");
-    
+
     // Chỉ hiển thị trạng thái email, không hiển thị mã giảm giá
     updateEmailStatus(response.emailSent);
   }
 
   function handleFallback(data) {
     const tempCode = generateTempDiscountCode(data.discountPercentage);
-    
+
     handleSuccess({
       success: true,
       discountCode: tempCode,
       emailSent: false,
-      message: "Mã tạm thời (offline)"
+      message: "Mã tạm thời (offline)",
     });
   }
 
@@ -223,13 +339,13 @@ $(document).ready(function() {
         `);
 
         // Load Lottie success animation
-        if (typeof lottie !== 'undefined') {
+        if (typeof lottie !== "undefined") {
           lottie.loadAnimation({
-            container: document.getElementById('success-lottie'),
-            renderer: 'svg',
+            container: document.getElementById("success-lottie"),
+            renderer: "svg",
             loop: false,
             autoplay: true,
-            path: './images/success.json'
+            path: "./images/success.json",
           });
         } else {
           // Fallback: CSS success icon
@@ -256,7 +372,7 @@ $(document).ready(function() {
   }
 
   function setLoadingState(loading) {
-    $("#submit-btn").prop('disabled', loading);
+    $("#submit-btn").prop("disabled", loading);
     if (loading) {
       $("#loading-spinner").removeClass("d-none");
       $("#submit-text").addClass("d-none");
@@ -315,8 +431,11 @@ $(document).ready(function() {
       const textRad = ((textAngle - 90) * Math.PI) / 180;
       const textX = centerX + radius * 0.7 * Math.cos(textRad);
       const textY = centerY + radius * 0.7 * Math.sin(textRad);
-      
-      let textColor = (segment.color === "#f3ffe1" || segment.color === "#ffeab9") ? "#246d4b" : "#ffffff";
+
+      let textColor =
+        segment.color === "#f3ffe1" || segment.color === "#ffeab9"
+          ? "#246d4b"
+          : "#ffffff";
 
       svgContent += `
         <text 
@@ -336,7 +455,7 @@ $(document).ready(function() {
 
     // Center circle
     svgContent += `<circle cx="${centerX}" cy="${centerY}" r="25" fill="#246d4b" />`;
-    
+
     // Logo EZ ở giữa
     svgContent += `
       <text 
@@ -358,14 +477,14 @@ $(document).ready(function() {
   function getRandomPrizeByProbability() {
     const random = Math.random();
     let cumulativeProbability = 0;
-    
+
     for (const prize of prizes) {
       cumulativeProbability += prize.probability;
       if (random <= cumulativeProbability) {
         return prize;
       }
     }
-    
+
     return prizes[prizes.length - 1];
   }
 
@@ -391,21 +510,21 @@ $(document).ready(function() {
         z-index: 9999;
       "></div>
     `);
-    
-    $('body').append(lottieContainer);
+
+    $("body").append(lottieContainer);
 
     // Load và play Lottie animation
-    if (typeof lottie !== 'undefined') {
+    if (typeof lottie !== "undefined") {
       const animation = lottie.loadAnimation({
-        container: document.getElementById('lottie-confetti'),
-        renderer: 'svg',
+        container: document.getElementById("lottie-confetti"),
+        renderer: "svg",
         loop: false,
         autoplay: true,
-        path: './images/confetti.json'
+        path: "./images/confetti.json",
       });
 
       // Xóa animation sau khi hoàn thành
-      animation.addEventListener('complete', function() {
+      animation.addEventListener("complete", function () {
         setTimeout(() => {
           lottieContainer.remove();
         }, 500);
@@ -413,14 +532,13 @@ $(document).ready(function() {
 
       // Fallback: Xóa sau 5 giây trong trường hợp animation không complete
       setTimeout(() => {
-        if (document.getElementById('lottie-confetti')) {
+        if (document.getElementById("lottie-confetti")) {
           lottieContainer.remove();
         }
       }, 5000);
-
     } else {
       // Fallback: CSS confetti nếu Lottie không load được
-      console.log('Lottie not loaded, using CSS fallback');
+      console.log("Lottie not loaded, using CSS fallback");
       createCSSConfetti();
       lottieContainer.remove();
     }
@@ -429,22 +547,32 @@ $(document).ready(function() {
   function createCSSConfetti() {
     // Fallback CSS confetti (simplified version)
     const confettiCount = 50;
-    const colors = ["#ff6b6b", "#4ecdc4", "#45b7d1", "#f9ca24", "#f0932b", "#eb4d4b", "#6c5ce7"];
-    
+    const colors = [
+      "#ff6b6b",
+      "#4ecdc4",
+      "#45b7d1",
+      "#f9ca24",
+      "#f0932b",
+      "#eb4d4b",
+      "#6c5ce7",
+    ];
+
     for (let i = 0; i < confettiCount; i++) {
       const confetti = $("<div>").css({
-        position: 'fixed',
-        left: Math.random() * window.innerWidth + 'px',
-        top: '-10px',
-        width: Math.random() * 8 + 4 + 'px',
-        height: Math.random() * 8 + 4 + 'px',
+        position: "fixed",
+        left: Math.random() * window.innerWidth + "px",
+        top: "-10px",
+        width: Math.random() * 8 + 4 + "px",
+        height: Math.random() * 8 + 4 + "px",
         backgroundColor: colors[Math.floor(Math.random() * colors.length)],
         zIndex: 9999,
-        borderRadius: '2px',
-        animation: `confettiFall ${Math.random() * 3 + 2}s ease-in-out ${Math.random() * 3}s forwards`
+        borderRadius: "2px",
+        animation: `confettiFall ${Math.random() * 3 + 2}s ease-in-out ${
+          Math.random() * 3
+        }s forwards`,
       });
 
-      $('body').append(confetti);
+      $("body").append(confetti);
 
       setTimeout(() => {
         confetti.remove();
