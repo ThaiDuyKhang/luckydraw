@@ -9,6 +9,28 @@ body {
     background-image: url('./images/bg-2.png');
     overflow: hidden;
 }
+/* Custom cursor với kích thước tối ưu */
+* {
+    cursor: url('./images/cursor35.png'), auto !important;
+}
+
+/* Cursor pointer cho clickable elements */
+a, button, .btn, input[type="submit"], input[type="button"], input[type="reset"], 
+select, .spin-button-wrapper, #ez-spin-btn, .modal-header .btn-close, 
+[role="button"], .clickable,
+a:hover, button:hover, .btn:hover, input[type="submit"]:hover, 
+input[type="button"]:hover, input[type="reset"]:hover, select:hover, 
+.spin-button-wrapper:hover, #ez-spin-btn:hover, .modal-header .btn-close:hover, 
+[role="button"]:hover, .clickable:hover {
+    cursor: url('./images/pointer50.png'), pointer !important;
+}
+
+/* Text cursor cho input fields */
+input[type="text"], input[type="email"], input[type="password"], 
+input[type="search"], input[type="tel"], input[type="url"], textarea{
+    cursor: url('./images/cursor35.png'), text !important;
+}
+
 
 .container {
     max-width: 900px;
