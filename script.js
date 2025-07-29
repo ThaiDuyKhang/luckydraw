@@ -3,11 +3,11 @@ $(document).ready(function () {
   const SCRIPT_URL =
     "https://script.google.com/macros/s/AKfycbxHlSw5shW4jgx6mg-cFBBQHSHsOlChY6CBC5fIgBqko097XNjlo7D86l5qjNtgQZMP/exec";
   const prizes = [
-    { percentage: 20, count: 6, probability: 0.0 }, // 50% xác suất trúng 20%
-    { percentage: 30, count: 5, probability: 0.0 }, // 30% xác suất trúng 30%
-    { percentage: 40, count: 4, probability: 0.0 }, // 15% xác suất trúng 40%
-    { percentage: 50, count: 3, probability: 0.0 }, // 5% xác suất trúng 50%
-    { percentage: 100, count: 1, probability: 1 }, // 5% xác suất trúng 50%
+    { percentage: 20, count: 6, probability: 0.5 }, // 50% xác suất trúng 20%
+    { percentage: 30, count: 5, probability: 0.3 }, // 30% xác suất trúng 30%
+    { percentage: 40, count: 4, probability: 0.15 }, // 15% xác suất trúng 40%
+    { percentage: 50, count: 3, probability: 0.05 }, // 5% xác suất trúng 50%
+    { percentage: 100, count: 1, probability: 0 }, // 5% xác suất trúng 50%
   ];
 
   let segments = [];
